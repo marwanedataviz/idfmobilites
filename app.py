@@ -12,47 +12,95 @@ API_KEY = os.environ.get("PRIM_API_KEY", "bOLm29LnPhUVdbPLWfLzodpT0XI9xrQ4")
 # ============================================================
 # CHARTE VISUELLE COMMUNE
 # ============================================================
-COULEUR_FOND = "#F5EFDF"          # blanc casse, legerement creme
-COULEUR_FOND_CARTE = "#FFFFFF"    # blanc pur, pour le bloc carte
-COULEUR_TEXTE = "#111111"         # noir, quasi absolu
-COULEUR_TEXTE_SECONDAIRE = "#8A8270"  # gris/beige doux
-COULEUR_LIGNE = "#111111"         # points noirs (marqueurs), pas les lignes colorees
-COULEUR_ACCENT = "#2F6FED"        # bleu (garde pour compat)
-COULEUR_ACCENT_2 = "#E8702A"      # orange (garde pour compat)
+COULEUR_FOND = "#F2EFEA"          # base du degrade de fond (le degrade est defini en CSS, index_string)
+COULEUR_FOND_CARTE = "#FFFFFF"
+COULEUR_TEXTE = "#14131A"         # noir profond, legerement bleute (esprit signaletique)
+COULEUR_TEXTE_SECONDAIRE = "#6E6C78"  # gris neutre
+COULEUR_LIGNE = "#14131A"         # points noirs (marqueurs), pas les lignes colorees
 
-# Palette limitee, une couleur = un role fixe, jamais melangees au hasard
-ACCENT_VERT = "#2E8B57"
-ACCENT_BLEU = "#2F6FED"
-ACCENT_ORANGE = "#E8702A"
-ACCENT_ROSE = "#D6547E"
-ACCENT_ROUGE = "#D8392C"
+# --- RESERVE : rubrique "Perturbations" -- NE PAS CHANGER, NE PAS REUTILISER AILLEURS ---
+COULEUR_PERTURBATION_KO = "#D8392C"   # rouge - etat "perturbee" (texte + badge), inchange depuis le debut du projet
+COULEUR_PERTURBATION_OK = "#2E8B57"   # vert - etat "OK" (badge), inchange depuis le debut du projet
+
+# --- Palette inspiree directement de la photo de reference (plan de transit PBS) ---
+MUR_BLEU = "#2F5C8A"          # bleu du mur carrele (zone de fond derriere les cadres) + cadre "Carte" (le hub)
+CADRE_CORAIL = "#FF6F59"      # ligne "P"
+CADRE_CIEL = "#4F9DC4"        # ligne "B"
+CADRE_JAUNE = "#FFC93C"       # ligne "S"
+CADRE_LIME = "#A8C43C"        # ligne "K"
 
 FONT_TITRE = "'Archivo', 'Helvetica Neue', Arial, sans-serif"
 NB_ETAPES_ANIMATION = 50
 DUREE_ETAPE_MS = 30
 
 
-def enveloppe_ticket(contenu, couleur_bande=None, bande_css=None, span_complet=False, padding="44px"):
-    """Le composant de base unique du site : meme forme (coins arrondis, bande coloree,
-    bordure noire) pour TOUT le contenu (carte, graphiques, texte, chiffres). Seule la taille,
-    la couleur de bande et le contenu different d'un ticket a l'autre."""
-    style_bande = {"height": "12px"}
-    if bande_css:
-        style_bande["background"] = bande_css
-    else:
-        style_bande["backgroundColor"] = couleur_bande or ACCENT_BLEU
+def enveloppe_ticket(contenu, couleur_bande=None, bande_css=None, span_complet=False, padding="40px 44px 44px",
+                      initiale=None, hub=False):
+    """Le cadre unique du site, un vrai 'cadre photo' epais colore pose sur le mur de station
+    (comme l'affiche de reference : cadre epais + interieur blanc). Meme forme pour TOUT le
+    contenu (carte, graphiques, textes, chiffres) ; seules la couleur du cadre, sa taille et
+    son contenu different. La pastille "initiale" rappelle les numeros/lettres de ligne."""
+    couleur_principale = couleur_bande or MUR_BLEU
+    epaisseur = "9px"
+
+    entete = []
+    if hub:
+        # Le cadre "Carte" est le hub du reseau : double-cercle + petites pastilles
+        # (echo purement decoratif des 2 fonctionnalites internes "Lignes" et "Perturbations",
+        # qui gardent elles-memes leur style/couleur d'origine, non modifie)
+        entete.append(html.Div(
+            style={"display": "flex", "alignItems": "center", "gap": "10px", "marginBottom": "18px"},
+            children=[
+                html.Div(style={
+                    "width": "30px", "height": "30px", "borderRadius": "50%",
+                    "border": f"4px solid {COULEUR_LIGNE}", "backgroundColor": "#FFFFFF",
+                    "position": "relative",
+                }, children=html.Div(style={
+                    "position": "absolute", "top": "6px", "left": "6px",
+                    "width": "10px", "height": "10px", "borderRadius": "50%",
+                    "backgroundColor": COULEUR_LIGNE,
+                })),
+                html.Div(style={
+                    "width": "20px", "height": "20px", "borderRadius": "50%",
+                    "backgroundColor": "#9C9C9C", "border": f"2px solid {COULEUR_LIGNE}",
+                }),
+                html.Div(style={
+                    "width": "20px", "height": "20px", "borderRadius": "50%",
+                    "backgroundColor": COULEUR_PERTURBATION_OK, "border": f"2px solid {COULEUR_LIGNE}",
+                }),
+            ],
+        ))
+    elif initiale:
+        entete.append(html.Div(
+            initiale,
+            style={
+                "width": "34px", "height": "34px", "borderRadius": "50%",
+                "backgroundColor": couleur_principale, "border": f"2.5px solid {COULEUR_LIGNE}",
+                "color": "#FFFFFF", "fontWeight": "800", "fontSize": "1rem",
+                "display": "flex", "alignItems": "center", "justifyContent": "center",
+                "marginBottom": "14px",
+            },
+        ))
+
     return html.Div(
+        className="ticket",
         style={
-            "backgroundColor": "#FFFFFF",
-            "borderRadius": "24px",
-            "border": f"2px solid {COULEUR_LIGNE}",
-            "overflow": "hidden",
+            "backgroundColor": couleur_principale,
+            "borderRadius": "18px",
+            "padding": epaisseur,
             "gridColumn": "1 / -1" if span_complet else None,
         },
-        children=[
-            html.Div(style=style_bande),
-            html.Div(contenu, style={"padding": padding, "fontFamily": FONT_TITRE}),
-        ],
+        children=html.Div(
+            style={
+                "backgroundColor": "#FFFFFF",
+                "borderRadius": "11px",
+                "border": f"2px solid {COULEUR_LIGNE}",
+            },
+            children=html.Div(
+                [*entete, contenu],
+                style={"padding": padding, "fontFamily": FONT_TITRE},
+            ),
+        ),
     )
 
 # ============================================================
@@ -339,7 +387,7 @@ def layout_bloc1():
         ),
         html.P(
             id="texte-perturbations",
-            style={"color": ACCENT_ROUGE, "textAlign": "center", "fontSize": "1rem", "fontWeight": "600",
+            style={"color": COULEUR_PERTURBATION_KO, "textAlign": "center", "fontSize": "1rem", "fontWeight": "600",
                    "marginTop": "10px", "marginBottom": "24px"}
         ),
         html.Div(
@@ -378,11 +426,12 @@ def layout_bloc1():
         dcc.Interval(id="minuteur-refresh", interval=90 * 1000, n_intervals=0),
     ])
     return html.Div(
-        style={"backgroundColor": COULEUR_FOND, "padding": "24px"},
+        style={"background": "transparent", "padding": "24px", "maxWidth": "1360px", "margin": "0 auto"},
         children=[
             enveloppe_ticket(
                 contenu,
-                bande_css=f"linear-gradient(90deg, {ACCENT_BLEU} 33%, {ACCENT_VERT} 33%, {ACCENT_VERT} 66%, {ACCENT_ORANGE} 66%)",
+                couleur_bande=MUR_BLEU,
+                hub=True,
                 span_complet=False,
             ),
         ],
@@ -403,7 +452,7 @@ def construire_panneau_lignes(lignes_perturbees, lignes_selectionnees):
         couleur_css = f"#{hex_couleur}" if hex_couleur else "#999"
         est_perturbee = lid in lignes_perturbees
         badge = "⚠ Perturbée" if est_perturbee else "✓ OK"
-        couleur_badge = ACCENT_ROUGE if est_perturbee else ACCENT_VERT
+        couleur_badge = COULEUR_PERTURBATION_KO if est_perturbee else COULEUR_PERTURBATION_OK
 
         blocs.append(html.Div(
             style={"display": "flex", "alignItems": "center", "marginBottom": "10px", "gap": "8px"},
@@ -444,7 +493,7 @@ def rafraichir_carte(n, lignes_selectionnees):
 # BLOC 2 : ANALYSE (8 INDICATEURS)
 # ============================================================
 
-def carte_chiffre(id_prefix, titre, valeur_cible, format_valeur, sous_texte, recit=None, note=None, couleur=ACCENT_BLEU):
+def carte_chiffre(id_prefix, titre, valeur_cible, format_valeur, sous_texte, recit=None, note=None, couleur=CADRE_CORAIL):
     return html.Div(
         style={"display": "flex", "alignItems": "flex-start", "gap": "22px"},
         children=[
@@ -490,7 +539,7 @@ def enregistrer_callback_compteur(id_prefix, format_valeur):
         return format_valeur(cible * n_borne / NB_ETAPES_ANIMATION)
 
 
-def carte_classement(titre, items, sous_texte=None, recit=None, note=None, couleur=ACCENT_ORANGE, unite="", format_valeur=None, echelle_max=None):
+def carte_classement(titre, items, sous_texte=None, recit=None, note=None, couleur=CADRE_JAUNE, unite="", format_valeur=None, echelle_max=None):
     valeur_max = echelle_max if echelle_max else max(v for _, v in items)
     lignes = []
     for nom, valeur in items:
@@ -547,7 +596,7 @@ def carte_classement(titre, items, sous_texte=None, recit=None, note=None, coule
 
 
 def carte_comparaison_double(titre, items, sous_texte=None, recit=None, note=None,
-                              couleur1=ACCENT_ROUGE, couleur2=ACCENT_VERT,
+                              couleur1=CADRE_CORAIL, couleur2=CADRE_CIEL,
                               label1="Partent travailler ailleurs", label2="Viennent travailler ici"):
     """Gabarit a 2 barres par commune (ex: sortants vs entrants), pour comparer 2 valeurs
     sans obliger le lecteur a calculer un ratio ou un ecart lui-meme."""
@@ -697,9 +746,9 @@ def layout_bloc2():
             format_valeur=lambda v: f"{v:,.0f}".replace(",", " "),
             sous_texte="trajets domicile-travail, chaque jour ouvré",
             note="Source : INSEE, Recensement de la population 2022 (exploitation complémentaire)",
-            couleur=ACCENT_BLEU,
+            couleur=CADRE_CORAIL,
         ),
-        couleur_bande=ACCENT_BLEU,
+        couleur_bande=CADRE_CORAIL, initiale="T",
     )
     ticket_gini = enveloppe_ticket(
         carte_chiffre(
@@ -708,9 +757,9 @@ def layout_bloc2():
             format_valeur=lambda v: f"{v:.0f}%",
             sous_texte="de l'emploi francilien se concentre dans seulement 10% des communes",
             recit="L'emploi n'est pas réparti de façon égale sur le territoire. Une poignée de communes concentre l'essentiel de l'activité, quand la grande majorité des communes franciliennes, pourtant bien plus nombreuses, ne pèsent presque rien face à elles.",
-            couleur=ACCENT_VERT,
+            couleur=CADRE_CIEL,
         ),
-        couleur_bande=ACCENT_VERT,
+        couleur_bande=CADRE_CIEL, initiale="C",
     )
     ticket_distance = enveloppe_ticket(
         carte_chiffre(
@@ -718,18 +767,18 @@ def layout_bloc2():
             valeur_cible=d["distance_moyenne_par_personne_km"],
             format_valeur=lambda v: f"{v:.0f} km",
             sous_texte="parcourus par un actif francilien pour aller travailler et rentrer chez lui",
-            couleur=ACCENT_ROUGE,
+            couleur=CADRE_JAUNE,
         ),
-        couleur_bande=ACCENT_ROUGE,
+        couleur_bande=CADRE_JAUNE, initiale="D",
     )
     ticket_poles = enveloppe_ticket(
         carte_classement(
             titre="Les plus grands pôles d'emploi",
             sous_texte="Nombre total de travailleurs venant chaque jour dans la commune",
             recit="Voici les 8 communes qui accueillent chaque jour le plus grand nombre de travailleurs venus d'ailleurs : Paris en tête, suivie par les communes du secteur de La Défense.",
-            items=top_poles, couleur=ACCENT_ORANGE,
+            items=top_poles, couleur=CADRE_LIME,
         ),
-        couleur_bande=ACCENT_ORANGE,
+        couleur_bande=CADRE_LIME, initiale="E",
     )
     ticket_solde = enveloppe_ticket(
         carte_comparaison_double(
@@ -737,9 +786,9 @@ def layout_bloc2():
             sous_texte="Nombre de personnes qui partent travailler ailleurs, contre celles qui viennent travailler ici",
             recit="Asnières-sur-Seine voit chaque jour bien plus d'actifs la quitter pour aller travailler ailleurs que de travailleurs y entrer. Le même déséquilibre touche des arrondissements parisiens comme le 18e et le 20e, pourtant situés à l'intérieur même de la capitale. La proximité avec les grands pôles d'emploi ne suffit donc pas à équilibrer les flux : habiter près de Paris n'implique pas d'y travailler.",
             items=top_solde_negatif,
-            couleur1=ACCENT_ROUGE, couleur2=ACCENT_VERT,
+            couleur1=CADRE_CORAIL, couleur2=CADRE_CIEL,
         ),
-        bande_css=f"linear-gradient(90deg, {ACCENT_ROUGE} 50%, {ACCENT_VERT} 50%)",
+        bande_css=f"linear-gradient(90deg, {CADRE_CORAIL} 50%, {CADRE_CIEL} 50%)", initiale="F",
     )
     ticket_autonomie = enveloppe_ticket(
         carte_classement(
@@ -748,9 +797,9 @@ def layout_bloc2():
             recit="Dans certaines communes, une bonne partie des habitants travaillent sur place, sans avoir besoin de se déplacer loin. Voici celles où cette indépendance est la plus marquée.",
             items=top_autonomie, unite="%", echelle_max=100,
             note="Communes de moins de 1000 actifs exclues (résultats non significatifs statistiquement) — la barre est calibrée sur une échelle de 0 à 100%",
-            couleur=ACCENT_ROSE,
+            couleur=CADRE_JAUNE,
         ),
-        couleur_bande=ACCENT_ROSE,
+        couleur_bande=CADRE_JAUNE, initiale="A",
     )
     ticket_ligne = enveloppe_ticket(
         carte_classement(
@@ -759,13 +808,13 @@ def layout_bloc2():
             recit="Certaines lignes de train supportent, à elles seules, une part énorme des déplacements quotidiens de toute la région.",
             items=top_lignes,
             note="Un même trajet peut être compté sur plusieurs lignes proches (méthode par proximité géographique)",
-            couleur=ACCENT_BLEU,
+            couleur=CADRE_LIME,
         ),
-        couleur_bande=ACCENT_BLEU,
+        couleur_bande=CADRE_LIME, initiale="L",
     )
 
     return html.Div(
-        style={"backgroundColor": COULEUR_FOND, "padding": "0 24px 60px"},
+        style={"background": "transparent", "padding": "0 24px 60px", "maxWidth": "1360px", "margin": "0 auto"},
         children=[
             # Les 3 tickets "chiffre seul" groupes ensemble : ils se collent les uns aux autres,
             # jamais un tout seul isole a cote d'un vide
@@ -794,6 +843,37 @@ enregistrer_callback_compteur("distance", lambda v: f"{v:,.0f} km".replace(",", 
 # NAVIGATION ENTRE LES 2 BLOCS
 # ============================================================
 
+def bandeau_signaletique():
+    """Bandeau repere, constant sur toute la page : bande bleue carrelee + plaque de nom de station
+    blanche par-dessus, esprit signaletique/metro. Purement decoratif, aucun element fonctionnel."""
+    return html.Div(
+        style={
+            "height": "84px",
+            "backgroundColor": MUR_BLEU,
+            "backgroundImage": (
+                "repeating-linear-gradient(90deg, rgba(255,255,255,0.09) 0px, rgba(255,255,255,0.09) 1px, "
+                "transparent 1px, transparent 40px), "
+                "repeating-linear-gradient(0deg, rgba(255,255,255,0.07) 0px, rgba(255,255,255,0.07) 1px, "
+                "transparent 1px, transparent 40px)"
+            ),
+            "display": "flex", "alignItems": "center", "justifyContent": "center",
+        },
+        children=html.Div(
+            "ÎLE-DE-FRANCE  ·  RÉSEAU DE MOBILITÉ",
+            style={
+                "backgroundColor": "#FFFFFF",
+                "color": MUR_BLEU,
+                "border": f"2px solid {COULEUR_LIGNE}",
+                "borderRadius": "10px",
+                "padding": "10px 28px",
+                "fontFamily": FONT_TITRE, "fontWeight": "700",
+                "fontSize": "0.85rem", "letterSpacing": "0.25em",
+                "boxShadow": "0 4px 0 rgba(20,19,26,0.15)",
+            },
+        ),
+    )
+
+
 app = Dash(__name__, suppress_callback_exceptions=True)
 
 app.index_string = '''
@@ -809,7 +889,26 @@ app.index_string = '''
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif; background: #F5EFDF; }
+  body {
+    margin: 0;
+    font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    background:
+      repeating-linear-gradient(90deg, rgba(20,19,26,0.11) 0px, rgba(20,19,26,0.11) 1px, transparent 1px, transparent 50px),
+      repeating-linear-gradient(0deg, rgba(20,19,26,0.11) 0px, rgba(20,19,26,0.11) 1px, transparent 1px, transparent 50px),
+      linear-gradient(180deg, #F7F4EC 0%, #F7F4EC 56%, #2F5C8A 56%, #2F5C8A 100%);
+    background-attachment: fixed;
+  }
+  .ticket {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 4px 0 rgba(20,19,26,0.06), 0 10px 22px rgba(20,19,26,0.10);
+  }
+  .ticket:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 0 rgba(20,19,26,0.07), 0 18px 34px rgba(20,19,26,0.16);
+  }
+  .repere-ligne {
+    transition: background-color 0.15s ease;
+  }
 </style>
 </head>
 <body>
@@ -823,8 +922,9 @@ app.index_string = '''
 </html>
 '''
 
-# Page unique : la carte en direct, suivie directement de l'analyse (defilement continu, pas d'onglets)
+# Page unique : bandeau repere, puis la carte en direct, puis l'analyse (defilement continu, pas d'onglets)
 app.layout = html.Div([
+    bandeau_signaletique(),
     layout_bloc1(),
     layout_bloc2(),
 ])
