@@ -893,8 +893,7 @@ app.index_string = '''
     margin: 0;
     font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
     background:
-      repeating-linear-gradient(90deg, rgba(20,19,26,0.11) 0px, rgba(20,19,26,0.11) 1px, transparent 1px, transparent 50px),
-      repeating-linear-gradient(0deg, rgba(20,19,26,0.11) 0px, rgba(20,19,26,0.11) 1px, transparent 1px, transparent 50px),
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2750%27%20height%3D%2750%27%3E%20%3Cline%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%2750%27%20y2%3D%270%27%20stroke%3D%27rgba%28255%2C255%2C255%2C0.55%29%27%20stroke-width%3D%271%27/%3E%20%3Cline%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%270%27%20y2%3D%2750%27%20stroke%3D%27rgba%28255%2C255%2C255%2C0.55%29%27%20stroke-width%3D%271%27/%3E%20%3Cline%20x1%3D%270%27%20y1%3D%271.5%27%20x2%3D%2750%27%20y2%3D%271.5%27%20stroke%3D%27rgba%280%2C0%2C0%2C0.14%29%27%20stroke-width%3D%271.5%27/%3E%20%3Cline%20x1%3D%271.5%27%20y1%3D%270%27%20x2%3D%271.5%27%20y2%3D%2750%27%20stroke%3D%27rgba%280%2C0%2C0%2C0.14%29%27%20stroke-width%3D%271.5%27/%3E%20%3C/svg%3E") repeat,
       linear-gradient(180deg, #F7F4EC 0%, #F7F4EC 56%, #2F5C8A 56%, #2F5C8A 100%);
     background-attachment: fixed;
   }
