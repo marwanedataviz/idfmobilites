@@ -1,0 +1,32 @@
+# Fichiers GTFS bruts (tres volumineux, plus necessaires une fois les calculs faits)
+stop_times.txt
+trips.txt
+stops.txt
+routes.txt
+shapes.txt
+calendar.txt
+calendar_dates.txt
+agency.txt
+attributions.txt
+booking_rules.txt
+object_codes_extension.txt
+pathways.txt
+ticketing_deep_links.txt
+transfers.txt
+gtfs/
+
+# Fichiers sources volumineux, deja transformes en fichiers plus petits
+base-flux-mobilite-domicile-lieu-travail-2022.csv
+arrets_icar.csv
+arrets_lignes_idf.csv
+icar_raw.xml
+perturbations_raw.json
+
+# Environnement Python
+venv/
+__pycache__/
+*.pyc
+
+# Fichiers systeme
+.DS_Store
+Thumbs.db

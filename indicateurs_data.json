@@ -1,0 +1,13 @@
+{
+  "total_trajets_reel": 5581382,
+  "total_trajets_seuil50": 4423662,
+  "gini_concentration_emploi": 0.861,
+  "part_emploi_top10pct_communes": 77.5,
+  "distance_cumulee_km": 108318488,
+  "distance_moyenne_par_personne_km": 25.2,
+  "distance_tours_terre": 2702.9,
+  "distance_fois_terre_lune": 281.79,
+  "centre_gravite_lat": 48.83612,
+  "centre_gravite_lon": 2.35364,
+  "centre_gravite_commune_proche": "Paris 5e Arrondissement"
+}
