@@ -174,6 +174,9 @@ DUREE_MAX = 2600
 # ============================================================
 
 def get_lignes_perturbees():
+    """Renvoie (lignes_touchees, details_par_ligne) :
+    - lignes_touchees : ensemble des ID de lignes actuellement perturbees (comme avant)
+    - details_par_ligne : dict {id_ligne: [titres des perturbations en cours]}"""
     url = "https://prim.iledefrance-mobilites.fr/marketplace/disruptions_bulk/disruptions/v2"
     headers = {"apiKey": API_KEY}
     try:
@@ -181,17 +184,26 @@ def get_lignes_perturbees():
         data = response.json()
     except Exception as e:
         print("Erreur lors de l'appel a l'API perturbations :", e)
-        return set()
+        return set(), {}
 
     lignes_touchees = set()
+    details_par_ligne = {}
     for d in data.get("disruptions", []):
+        titre = (d.get("title") or "").strip()
+        lignes_de_cette_perturbation = set()
         for section in d.get("impactedSections", []):
             line_id = section.get("lineId", "")
             if line_id.startswith("line:IDFM:"):
                 ligne = line_id.replace("line:IDFM:", "")
                 if ligne in lignes_valides:
-                    lignes_touchees.add(ligne)
-    return lignes_touchees
+                    lignes_de_cette_perturbation.add(ligne)
+        lignes_touchees |= lignes_de_cette_perturbation
+        if titre:
+            for ligne in lignes_de_cette_perturbation:
+                details_par_ligne.setdefault(ligne, [])
+                if titre not in details_par_ligne[ligne]:
+                    details_par_ligne[ligne].append(titre)
+    return lignes_touchees, details_par_ligne
 
 
 DUREE_PAUSE_ARRET = 45  # pause nettement visible (env. 0,35 seconde a l'ecran) a chaque arret intermediaire
@@ -438,8 +450,10 @@ def layout_bloc1():
     )
 
 
-def construire_panneau_lignes(lignes_perturbees, lignes_selectionnees):
-    """Petit panneau : pastille de couleur officielle + statut OK/perturbee pour chaque ligne affichee."""
+def construire_panneau_lignes(lignes_perturbees, lignes_selectionnees, details_perturbations=None):
+    """Petit panneau : pastille de couleur officielle + statut OK/perturbee pour chaque ligne affichee,
+    avec un volet 'Voir le detail' cliquable (natif HTML, pas besoin de callback) quand perturbee."""
+    details_perturbations = details_perturbations or {}
     lignes_a_afficher = lignes_selectionnees if lignes_selectionnees else [lid for lid, _ in compte_lignes.most_common(10)]
 
     blocs = [html.Div("Lignes affichées", style={
@@ -467,8 +481,29 @@ def construire_panneau_lignes(lignes_perturbees, lignes_selectionnees):
             ],
         ))
         blocs.append(html.Div(badge, style={
-            "color": couleur_badge, "fontSize": "0.75rem", "marginBottom": "12px", "marginLeft": "22px",
+            "color": couleur_badge, "fontSize": "0.75rem", "marginLeft": "22px",
         }))
+
+        titres = details_perturbations.get(lid, [])
+        if est_perturbee and titres:
+            blocs.append(html.Details(
+                style={"marginLeft": "22px", "marginBottom": "12px", "marginTop": "4px"},
+                children=[
+                    html.Summary("Voir le détail", style={
+                        "color": COULEUR_PERTURBATION_KO, "fontSize": "0.75rem", "cursor": "pointer",
+                        "fontWeight": "600",
+                    }),
+                    html.Div(
+                        [html.Div(t, style={"marginBottom": "6px"}) for t in titres],
+                        style={
+                            "color": COULEUR_TEXTE_SECONDAIRE, "fontSize": "0.75rem",
+                            "marginTop": "6px", "lineHeight": "1.5",
+                        },
+                    ),
+                ],
+            ))
+        else:
+            blocs.append(html.Div(style={"marginBottom": "12px"}))
 
     return blocs
 
@@ -481,11 +516,11 @@ def construire_panneau_lignes(lignes_perturbees, lignes_selectionnees):
     Input("selecteur-lignes", "value"),
 )
 def rafraichir_carte(n, lignes_selectionnees):
-    lignes_perturbees = get_lignes_perturbees()
+    lignes_perturbees, details_perturbations = get_lignes_perturbees()
     trips, nb_perturbes, total = construire_trips(lignes_perturbees, lignes_selectionnees)
     carte_html = construire_html_animation(trips)
     texte = f"{len(lignes_perturbees)} lignes sur {len(lignes_valides)} connaissent une perturbation en ce moment."
-    panneau = construire_panneau_lignes(lignes_perturbees, lignes_selectionnees)
+    panneau = construire_panneau_lignes(lignes_perturbees, lignes_selectionnees, details_perturbations)
     return carte_html, texte, panneau
 
 
