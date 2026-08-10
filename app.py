@@ -394,6 +394,7 @@ def layout_bloc1():
     contenu = html.Div([
         html.H1(
             "Flux de mobilité en Île-de-France",
+            className="site-titre",
             style={"color": COULEUR_TEXTE, "textAlign": "center", "marginBottom": "0",
                    "fontSize": "2.4rem", "fontWeight": "900", "letterSpacing": "-0.01em"}
         ),
@@ -403,10 +404,13 @@ def layout_bloc1():
                    "marginTop": "10px", "marginBottom": "24px"}
         ),
         html.Div(
-            style={"display": "flex", "gap": "20px"},
+            className="bloc1-ligne",
+            style={"display": "flex", "gap": "20px", "flexWrap": "wrap"},
             children=[
                 html.Div(
-                    style={"width": "240px", "paddingRight": "20px", "borderRight": "1px solid #E7E5DC"},
+                    className="bloc1-colonne",
+                    style={"width": "240px", "minWidth": "200px", "flex": "1 1 220px",
+                           "paddingRight": "20px", "borderRight": "1px solid #E7E5DC"},
                     children=[
                         html.Div("Lignes à afficher", style={
                             "color": COULEUR_TEXTE_SECONDAIRE, "fontSize": "0.8rem", "textTransform": "uppercase",
@@ -424,12 +428,15 @@ def layout_bloc1():
                 ),
                 html.Iframe(
                     id="carte-iframe",
-                    style={"flex": "1", "height": "70vh", "border": "none", "borderRadius": "14px"}
+                    className="bloc1-carte",
+                    style={"flex": "3 1 320px", "height": "70vh", "minHeight": "360px", "border": "none", "borderRadius": "14px"}
                 ),
                 html.Div(
                     id="panneau-lignes",
+                    className="bloc1-colonne",
                     style={
-                        "width": "240px", "height": "70vh", "overflowY": "auto",
+                        "width": "240px", "minWidth": "200px", "flex": "1 1 220px",
+                        "height": "70vh", "overflowY": "auto",
                         "paddingLeft": "20px", "borderLeft": "1px solid #E7E5DC",
                     },
                 ),
@@ -942,6 +949,28 @@ app.index_string = '''
   }
   .repere-ligne {
     transition: background-color 0.15s ease;
+  }
+
+  /* --- Mobile : on empile la carte, le selecteur et le panneau au lieu de les mettre cote a cote --- */
+  @media (max-width: 820px) {
+    .bloc1-ligne {
+      flex-direction: column;
+    }
+    .bloc1-colonne {
+      width: 100% !important;
+      flex: none !important;
+      border: none !important;
+      padding: 0 0 16px 0 !important;
+    }
+    .bloc1-carte {
+      flex: none !important;
+      width: 100% !important;
+      height: 50vh !important;
+      min-height: 320px !important;
+    }
+    .site-titre {
+      font-size: 1.6rem !important;
+    }
   }
 </style>
 </head>
