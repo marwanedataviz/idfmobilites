@@ -163,10 +163,12 @@ def option_ligne(lid):
 lignes_options = [option_ligne(lid) for lid in sorted(compte_lignes, key=lambda x: -compte_lignes[x])]
 lignes_par_defaut = [lid for lid, _ in compte_lignes.most_common(3)]
 
-LOOP_LENGTH = 3000
-VITESSE_TRAJET = 3200
+LOOP_LENGTH = 70000       # boucle d'animation agrandie pour accueillir les vrais trajets GTFS (jusqu'a ~2h reelles)
+VITESSE_TRAJET = 3200     # utilise uniquement pour les flux de repli (sans chemin reel disponible)
 DUREE_MIN = 150
 DUREE_MAX = 2600
+FACTEUR_COMPRESSION = 14  # 1 seconde reelle GTFS = 1/14e de seconde d'animation (compression legere, option 2)
+ECHELLE_TEMPS = 120 / FACTEUR_COMPRESSION  # 120 = unites d'animation par seconde reelle (2 unites/image x 60 images/s)
 
 
 # ============================================================
@@ -206,26 +208,6 @@ def get_lignes_perturbees():
     return lignes_touchees, details_par_ligne
 
 
-DUREE_PAUSE_ARRET = 45  # pause nettement visible (env. 0,35 seconde a l'ecran) a chaque arret intermediaire
-
-
-def inserer_pauses(path, timestamps):
-    """Duplique chaque arret intermediaire pour creer une vraie pause (immobilite) avant de repartir."""
-    if len(path) < 3:
-        return path, timestamps
-    nouveau_path = [path[0]]
-    nouveau_ts = [timestamps[0]]
-    decalage = 0
-    for i in range(1, len(path)):
-        nouveau_path.append(path[i])
-        nouveau_ts.append(timestamps[i] + decalage)
-        if i < len(path) - 1:  # pas de pause au terminus final
-            decalage += DUREE_PAUSE_ARRET
-            nouveau_path.append(path[i])  # meme position, dupliquee
-            nouveau_ts.append(timestamps[i] + decalage)
-    return nouveau_path, nouveau_ts
-
-
 def construire_trips(lignes_perturbees, lignes_selectionnees):
     df = df_reference.copy()
     selection = set(lignes_selectionnees) if lignes_selectionnees else None
@@ -261,27 +243,19 @@ def construire_trips(lignes_perturbees, lignes_selectionnees):
         chemin_reel = chemins_reels.get(idx)
 
         if chemin_reel and chemin_reel["path"]:
-            # --- Vrai chemin avec arrets intermediaires + vrai rythme GTFS ---
-            path_brut = chemin_reel["path"]
+            # --- Vrai chemin GTFS : positions + horaires reels (arrets deja inclus), juste compresses ---
+            path = chemin_reel["path"]
             temps_cumules = chemin_reel.get("temps_cumules_secondes")
-            nb_pauses = max(0, len(path_brut) - 2)  # pas de pause au premier ni au dernier arret
-            budget_pauses = nb_pauses * DUREE_PAUSE_ARRET
 
-            if temps_cumules and len(temps_cumules) == len(path_brut):
-                duree_reelle = max(temps_cumules[-1], 1)
-                # L'echelle tient compte du budget des pauses, pour que le total (trajet + pauses)
-                # reste dans nos bornes d'animation habituelles
-                budget_trajet = max(DUREE_MIN, min(DUREE_MAX, duree_reelle + budget_pauses)) - budget_pauses
-                budget_trajet = max(budget_trajet, 20)
-                echelle = budget_trajet / duree_reelle
-                timestamps_brutes = [t * echelle for t in temps_cumules]
+            if temps_cumules and len(temps_cumules) == len(path):
+                timestamps_relatives = [t * ECHELLE_TEMPS for t in temps_cumules]
             else:
+                # Filet de securite si jamais les horaires manquent pour ce chemin : repartition egale
                 longueur = math.sqrt((lon2 - lon1) ** 2 + (lat2 - lat1) ** 2) or 0.0001
                 duree = max(DUREE_MIN, min(DUREE_MAX, longueur * VITESSE_TRAJET))
-                n = len(path_brut)
-                timestamps_brutes = [duree * i / (n - 1) for i in range(n)]
+                n = len(path)
+                timestamps_relatives = [duree * i / (n - 1) for i in range(n)]
 
-            path, timestamps_relatives = inserer_pauses(path_brut, timestamps_brutes)
             duree_totale = timestamps_relatives[-1]
             offset = random.randint(0, max(1, int(LOOP_LENGTH - duree_totale - 1)))
             timestamps = [offset + t for t in timestamps_relatives]
